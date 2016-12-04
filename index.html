@@ -222,6 +222,16 @@
         width: 100%;
         height: 30px;
     }
+
+#pvi2 button {
+    min-width:20px;
+
+}
+#pvi2 input {
+    min-width:42px;
+
+}
+
 </style>
     <script>
 
@@ -826,7 +836,7 @@
         if (typeof(Sample)=="undefined") return false;        
         if (!Sample.Qtext) return false;  
         if (Sample.Qtext=="") return false;        
-           if(item.name.search(new RegExp(Sample.Qtext, "i"))>=0){
+           if((item.name+" "+item.author).search(new RegExp(Sample.Qtext, "i"))>=0){
                 return true;
             }
             return false;
@@ -862,17 +872,9 @@
 
     ]);
 
-    var mlista2 = new WinJS.Binding.List([
-        { name: "Pisco Sour", icon: "images/coctel/06.jpg", time: "7:30p", type: "Coctel", amount:"31.0", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "1" },
-        { name: "Mango Colado", icon: "images/coctel/10.jpg", time: "7:30p", type: "Coctel", amount:"32.0", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "1" },
-         { name: "Boliyucas", icon: "images/piqueos/07.jpg", time: "7:30p", type: "Piqueo", amount:"22.0", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "1" }     
-   ]);        
+    var mlista2 = new WinJS.Binding.List([ ]);        
 
-    var mlista3 = new WinJS.Binding.List([
-        { name: "Pisco Sour", icon: "images/coctel/06.jpg", time: "7:30p", type: "Coctel", amount:"31.0", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "2" ,t:"62.0"},
-        { name: "Mango Colado", icon: "images/coctel/10.jpg", time: "7:30p", type: "Coctel", amount:"32.0", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "1" ,t:"32.0" },
-         { name: "Boliyucas", icon: "images/piqueos/07.jpg", time: "7:30p", type: "Piqueo", amount:"22.0", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "1" ,t:"22.0" }     
-   ]);        
+    var mlista3 = new WinJS.Binding.List([ ]);        
 
     var inbox = new WinJS.Binding.List([
         { name: "Rocco Gower", icon: "images/people/101.jpg", time: "8:05p", readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", messageText: "texto texto Texto texto Texto" },
@@ -936,10 +938,50 @@
     });
 
     WinJS.Namespace.define("Sample", {
-    changeSelectionMode: WinJS.UI.eventHandler(function (ev) {
-        var listView = Sample.ListView.listView;
 
-    }),     
+    inputChanged: WinJS.UI.eventHandler(function (ev) {
+
+	        var _listView = document.getElementById("slist").winControl;
+		    suma = 0; 
+
+            var list = _listView.itemDataSource.list;
+            for (var i = 0; i < list.length; i++) {
+                var item = list.getAt(i);
+                var ele = _listView.elementFromIndex(i);
+                item.n = ele.querySelector("#cantidad").value;
+                
+    		    suma = suma + Number(item.amount) * Number(item.n)   
+
+            }
+
+
+
+		    document.querySelector("#amount").innerText=suma.toFixed(2);
+
+
+
+        }),
+    inputAdd: WinJS.UI.eventHandler(function (ev) {
+
+	        var _listView = document.getElementById("slist").winControl;
+		    suma = 0; 
+
+            var list = _listView.itemDataSource.list;
+            for (var i = 0; i < list.length; i++) {
+                var item = list.getAt(i);
+                var ele = _listView.elementFromIndex(i);
+                if (ele.contains(event.srcElement)){
+                    var ip = ele.querySelector("#cantidad");
+                    ip.value = String(Number(ip.value) + 1) 
+                }
+
+            }
+
+            Sample.inputChanged();
+
+
+        }),     
+             
         Inbox: inbox,
         Enque: enque,
         Karlist: karlist,        
@@ -983,13 +1025,117 @@ function querySubmittedHandler(eventObject) {
 
 WinJS.Namespace.define("Sample", {
     suggestionsRequestedHandler: WinJS.UI.eventHandler(suggestionsRequestedHandler),
-    querySubmittedHandler: WinJS.UI.eventHandler(querySubmittedHandler)
+    querySubmittedHandler: WinJS.UI.eventHandler(querySubmittedHandler),
+    itemInvokedHandler: WinJS.UI.eventHandler(function(){document.querySelector('#dialog3').winControl.show()})
 });
 
 
 
-WinJS.UI.processAll().then(function () {});
-       
+WinJS.UI.processAll().then(function () {
+    var contentDialog = document.querySelector("#dialog1").winControl;
+    contentDialog.addEventListener("beforehide", function(ev){
+    	if (ev.detail.result=='primary'){
+    		var wlist = document.querySelector("#plist").winControl;
+
+    		if (wlist.selection.count() >0 ) {
+    			while(Sample.Mlista2.length>0){
+    				Sample.Mlista2.pop()
+    			} 
+    			suma = 0; 
+    			wlist.selection.getItems().done(function (items) {
+	           		for (var j = items.length - 1; j >= 0; j--) {
+
+    					Sample.Mlista2.push({ name: items[j].data.name , icon: items[j].data.icon , time: items[j].data.time, type: items[j].data.type, amount:items[j].data.amount, readStateColor: "rgba(255, 255, 255, .4)", readStateWeight: "", n: "1" });
+    					suma = suma + Number(items[j].data.amount)
+    				}
+					document.querySelector("#amount").innerText=suma.toFixed(2);    				
+    			}
+    			)
+
+    		}
+        };
+    	
+
+    }, false);
+    var contentDialog = document.querySelector("#dialog2").winControl;
+    contentDialog.addEventListener("beforehide", function(ev){
+        if (ev.detail.result=='primary'){
+	        var _listView = document.getElementById("slist").winControl;
+	        var _dataSource = _listView.itemDataSource;
+	        if (_listView.selection.count() > 0) {
+		        _listView.selection.getItems().done(function (items){
+			        _dataSource.beginEdits();
+			        items.forEach(function (item){
+				        _dataSource.remove(item.key);
+			        });
+			        _dataSource.endEdits();
+		        });
+	        }
+        }
+
+		suma = 0; 
+
+        var list = _listView.itemDataSource.list;
+        for (var i = 0; i < list.length; i++) {
+               var item = list.getAt(i);
+    		    suma = suma + Number(item.amount)                
+        }
+		document.querySelector("#amount").innerText=suma.toFixed(2);
+
+    }, false);
+    var contentDialog = document.querySelector("#dialog3").winControl;
+    contentDialog.addEventListener("beforehide", function(ev){
+    	if (ev.detail.result=='primary'){
+    		var wlist = document.querySelector("#filterklist").winControl;
+
+    		if (wlist.selection.count() >0 ) {
+    			wlist.selection.getItems().done(function (items) {
+	           	for (var j = items.length - 1; j >= 0; j--) {
+
+    				Sample.Enque.push({ name: items[j].data.name , icon: items[j].data.icon , time: items[j].data.time, client: "Mesa 5", readStateColor: "rgba(255, 255, 255, 1)", readStateWeight: "600", author: items[j].data.author });
+    				}
+    			})
+    		}
+        };
+
+    }, false);        
+
+    var contentDialog = document.querySelector("#dialog4").winControl;
+    contentDialog.addEventListener("beforehide", function(ev){
+    	if (ev.detail.result=='primary'){
+ 
+	        var _listView = document.getElementById("slist").winControl;
+
+
+		    suma = 0; 
+
+            var list = _listView.itemDataSource.list;
+            for (var i = 0; i < list.length; i++) {
+                var item = list.getAt(i);
+                var ele = _listView.elementFromIndex(i);
+                item.n = ele.querySelector("#cantidad").value;
+    			Sample.Mlista3.push({ name: item.name , amount:item.amount, n:item.n ,t:(Number(item.amount)*Number(item.n)).toFixed(2) });
+                
+    		    suma = suma + Number(item.amount) * Number(item.n)   
+
+            }
+
+            suma = 0; 
+
+            Sample.Mlista3.forEach(function(v,i,a){suma = suma + Number(v.amount)* Number(v.n)})
+
+		    document.querySelector("#amount2").innerText=suma.toFixed(2);
+
+   			while(Sample.Mlista2.length>0){
+   				Sample.Mlista2.pop()
+   			} 
+
+		    document.querySelector("#amount").innerText=(0).toFixed(2);
+            document.querySelector('#dialog5').winControl.show()            
+        };
+
+    }, false);        
+});
 
     </script>
 </head>
@@ -1038,7 +1184,8 @@ WinJS.UI.processAll().then(function () {});
          <div class="smallListIconTextItem-Detail">
              <h6 class="win-h6" data-win-bind="textContent: name"></h6>
              <h8 class="win-h8" ><span  data-win-bind="textContent: amount"></span> Soles</h8>
-            <br/>Cnt <input class="win-textbox win-interactive" type="number" name="cantidad" maxlength="2" data-win-bind="value: n" />
+            <br/>Cnt <input class="win-textbox win-interactive" type="number" id="cantidad" name="cantidad" maxlength="2" data-win-bind="value: n"  onchange="Sample.inputChanged()" />
+            <button class="win-button" onclick="Sample.inputAdd()" >+</button>
          </div>
      </div>
  </div>
@@ -1078,10 +1225,9 @@ WinJS.UI.processAll().then(function () {});
         <div data-win-control="WinJS.UI.AutoSuggestBox" data-win-options="{
             placeholderText: 'Ingrese Título, autor o género',
             onsuggestionsrequested: Sample.suggestionsRequestedHandler,
-            onquerysubmitted: Sample.querySubmittedHandler
+            onquerychanged: Sample.querySubmittedHandler
             }">
         </div> 
-        <button class="win-button" onclick="document.querySelector('#dialog3').winControl.show()">Seleccionar</button>
         <div id="filterklist" class="listView win-selectionstylefilled"
              data-win-control="WinJS.UI.ListView"
             data-win-options="{
@@ -1089,7 +1235,8 @@ WinJS.UI.processAll().then(function () {});
                     itemTemplate: select('.smallListIconTextTemplate'),
                     selectionMode: 'single',
                     tapBehavior: 'toggleSelect',
-                    layout: { type: WinJS.UI.ListLayout }
+                    layout: { type: WinJS.UI.ListLayout },
+                    oniteminvoked: Sample.itemInvokedHandler
                 }">
         </div>
 
@@ -1099,13 +1246,13 @@ WinJS.UI.processAll().then(function () {});
         <div class="header">
             <div class="button-well">
                 <button class="win-button" onclick="document.querySelector('#dialog1').winControl.show()">Seleccionar</button>
-                <button class="win-button" onclick="">Limpiar Selecion</button>
+                <button class="win-button" onclick="document.querySelector('#plist').winControl.selection.clear()">Limpiar Selecion</button>
             </div>
 
         </div>
     </div>
 
-    <div class="listView win-selectionstylefilled lvpedidos"
+    <div id="plist" class="listView win-selectionstylefilled lvpedidos"
          data-win-control="WinJS.UI.ListView"
          data-win-options="{
                     itemDataSource: Sample.Grouped.dataSource,
@@ -1117,9 +1264,6 @@ WinJS.UI.processAll().then(function () {});
             }">
     </div>
 
-
-
-
     </div>
     <div class="pivotItem" id="pvi2" data-win-control="WinJS.UI.PivotItem" data-win-options="{ 'header': 'Confirmaci&oacute;n' }">
 
@@ -1127,13 +1271,13 @@ WinJS.UI.processAll().then(function () {});
         <div class="header">
             <div class="button-well">
                 <button class="win-button" onclick="document.querySelector('#dialog2').winControl.show()" >Eliminar Seleccionados</button>
-                <button class="win-button" onclick="document.querySelector('#dialog1').winControl.show()" >Confirmar</button>
+                <button class="win-button" onclick="document.querySelector('#dialog4').winControl.show()" >Confirmar</button>
             </div>
-            <h3 class="win-h3">Monto Total: <span data-win-bind="textContent: context.currentMode.name">85.00</span> Soles</h3>
+            <h3 class="win-h3">Monto Total: <span id="amount" data-win-bind="textContent: context.currentMode.name">0.00</span> Soles</h3>
    
         </div>
       </div>        
-      <div class="listView win-selectionstylefilled"
+      <div id="slist" class="listView win-selectionstylefilled"
          data-win-control="WinJS.UI.ListView"
          data-win-options="{
                     itemDataSource: Sample.Mlista2.dataSource,
@@ -1148,11 +1292,11 @@ WinJS.UI.processAll().then(function () {});
         <div class="headerFooterPlaceholder">
         <div class="header">
 
-            <h3 class="win-h3">Total: <span data-win-bind="textContent: context.currentMode.name">116.00</span> Soles</h3>
+            <h3 class="win-h3">Total: <span id="amount2" data-win-bind="textContent: context.currentMode.name">0.00</span> Soles</h3>
    
         </div>
       </div>        
-      <div class="listView win-selectionstylefilled"
+      <div id="flist" class="listView win-selectionstylefilled"
          data-win-control="WinJS.UI.ListView"
          data-win-options="{
                     itemDataSource: Sample.Mlista3.dataSource,
@@ -1167,11 +1311,11 @@ WinJS.UI.processAll().then(function () {});
 
         <div class="headerFooterPlaceholder">
         <div class="header">
-            <textarea class="win-interactive win-textarea"  rows="4" cols="100" width="600px"></textarea> 
-            <button class="win-button" data-win-bind="onclick: changeSelectionMode">Enviar</button>            
+            <textarea id="messageText" class="win-interactive win-textarea"  rows="4" cols="100" width="600px"></textarea> 
+            <button class="win-button" onclick="var d=new Date();var txta=document.querySelector('#messageText');Sample.Inbox.unshift({ name: 'Renan Abarca', icon: 'images/people/101.jpg', time: d.getHours()+':'+d.getMinutes(), readStateColor: 'rgba(255, 255, 255, .4)', readStateWeight:'', messageText: txta.value });txta.value='';txta.focus();">Enviar</button>            
         </div>
         </div>        
-        <div class="listView win-selectionstylefilled"
+        <div id="chatlist"  class="listView win-selectionstylefilled"
             data-win-control="WinJS.UI.ListView"
             data-win-options="{
                     itemDataSource: Sample.Inbox.dataSource,
@@ -1181,8 +1325,8 @@ WinJS.UI.processAll().then(function () {});
                     layout: { type: WinJS.UI.ListLayout, groupHeaderPosition: 'top' }
             }">
         </div>   
-
     </div>
+
     <div class="pivotItem" id="pvi2" data-win-control="WinJS.UI.PivotItem" data-win-options="{ 'header': 'Conexi&oacute;n' }">
     
     
@@ -1240,7 +1384,7 @@ WinJS.UI.processAll().then(function () {});
              primaryCommandText: 'Aceptar',
              secondaryCommandText: 'Cancelar'
         }">
-        Desea Eliminar este Pedido.
+        Desea Eliminar Items Seleccionados.
     </div>
     <div id="dialog3" data-win-control="WinJS.UI.ContentDialog" data-win-options="{
              title: 'Seleccionar Canci&oacute;n',
@@ -1248,6 +1392,19 @@ WinJS.UI.processAll().then(function () {});
              secondaryCommandText: 'Cancelar'
         }">
         Desea Seleccionar esta canci&oacute;n.
+    </div>
+    <div id="dialog4" data-win-control="WinJS.UI.ContentDialog" data-win-options="{
+             title: 'Seleccionar Pedido',
+             primaryCommandText: 'Aceptar',
+             secondaryCommandText: 'Cancelar'
+        }">
+        Desea Confirmar este Pedido.
+    </div>
+    <div id="dialog5" data-win-control="WinJS.UI.ContentDialog" data-win-options="{
+             title: 'Pedido Atendido',
+             primaryCommandText: 'Aceptar'
+        }">
+        Su Pedido ser&aacute; entregado en breve.
     </div>
     
 </body>
